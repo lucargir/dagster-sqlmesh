@@ -2,13 +2,13 @@ import typing as t
 from collections.abc import Sequence
 from inspect import signature
 
-from dagster import AssetDep, AssetKey, AssetOut
+from dagster import AssetKey, AssetOut
 from pydantic import BaseModel, Field
 from sqlglot import exp
 from sqlmesh.core.context import Context
 from sqlmesh.core.model import Model
 
-from .types import ConvertibleToAssetDep, ConvertibleToAssetOut
+from .types import ConvertibleToAssetOut
 
 
 class IntermediateAssetOut(BaseModel):
@@ -34,14 +34,6 @@ class IntermediateAssetOut(BaseModel):
             kinds=self.kinds,
             **self.kwargs,
         )
-
-
-class IntermediateAssetDep(BaseModel):
-    key: str
-    kwargs: dict[str, t.Any] = Field(default_factory=dict)
-
-    def to_asset_dep(self) -> AssetDep:
-        return AssetDep(AssetKey.from_user_string(self.key))
 
 
 class SQLMeshDagsterTranslator:
@@ -105,21 +97,6 @@ class SQLMeshDagsterTranslator:
             str: The SQL dialect name (e.g., "duckdb", "postgres", etc.)
         """
         return context.engine_adapter.dialect
-
-    def create_asset_dep(self, *, key: str, **kwargs: t.Any) -> ConvertibleToAssetDep:
-        """Create an object that resolves to an AssetDep.
-
-        This creates an intermediate representation that can be converted to a
-        Dagster AssetDep. Most users will not need to use this method directly.
-        
-        Args:
-            key: The asset key string for the dependency
-            **kwargs: Additional arguments to pass to the AssetDep
-            
-        Returns:
-            ConvertibleToAssetDep: An object that can be converted to an AssetDep
-        """
-        return IntermediateAssetDep(key=key, kwargs=kwargs)
 
     def create_asset_out(
         self, *, model_key: str, asset_key: str, **kwargs: t.Any

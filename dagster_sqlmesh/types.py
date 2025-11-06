@@ -1,8 +1,27 @@
 import typing as t
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from dagster import AssetCheckResult, AssetDep, AssetKey, AssetMaterialization, AssetOut
+from dagster import (
+    AssetCheckResult,
+    AssetDep,
+    AssetKey,
+    AssetMaterialization,
+    AssetOut,
+    AssetsDefinition,
+    AssetSpec,
+    SourceAsset,
+)
 from sqlmesh.core.model import Model
+
+# Type alias that mirrors Dagster's internal CoercibleToAssetDep
+# This uses only public API types and will remain stable across Dagster versions
+# Equivalent to:
+# CoercibleToAssetDep = Union[CoercibleToAssetKey, "AssetSpec", "AssetsDefinition", "SourceAsset", "AssetDep"]
+# CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
+
+CoercibleToAssetDep = AssetKey | str | Sequence[str] | AssetSpec | AssetsDefinition | SourceAsset | AssetDep
+
 
 MultiAssetResponse = t.Iterable[AssetCheckResult | AssetMaterialization]
 
@@ -29,20 +48,16 @@ class SQLMeshModelDep:
 
     def parse_fqn(self) -> SQLMeshParsedFQN:
         return SQLMeshParsedFQN.parse(self.fqn)
-    
+
+
 class ConvertibleToAssetOut(t.Protocol):
     def to_asset_out(self) -> AssetOut:
         """Convert to an AssetOut object."""
         ...
 
-class ConvertibleToAssetDep(t.Protocol):
-    def to_asset_dep(self) -> AssetDep:
-        """Convert to an AssetDep object."""
-        ...
 
 class ConvertibleToAssetKey(t.Protocol):
-    def to_asset_key(self) -> AssetKey:
-        ...
+    def to_asset_key(self) -> AssetKey: ...
 
 @dataclass(kw_only=True)
 class SQLMeshMultiAssetOptions:
@@ -53,7 +68,7 @@ class SQLMeshMultiAssetOptions:
     manipulate the dagster asset creation process as they see fit."""
 
     outs: t.Mapping[str, ConvertibleToAssetOut] = field(default_factory=lambda: {})
-    deps: t.Iterable[ConvertibleToAssetDep] = field(default_factory=lambda: [])
+    deps: t.Iterable[CoercibleToAssetDep] = field(default_factory=lambda: [])
     internal_asset_deps: t.Mapping[str, set[str]] = field(default_factory=lambda: {})
 
     def to_asset_outs(self) -> t.Mapping[str, AssetOut]:
@@ -62,7 +77,13 @@ class SQLMeshMultiAssetOptions:
 
     def to_asset_deps(self) -> t.Iterable[AssetDep]:
         """Convert to an iterable of AssetDep objects."""
-        return [dep.to_asset_dep() for dep in self.deps]
+        all_deps: list[AssetDep] = []
+        for dep in self.deps:
+            if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
+                all_deps.extend([AssetDep.from_coercible(key) for key in dep.keys])
+            else:
+                all_deps.append(AssetDep.from_coercible(dep))
+        return all_deps
     
     def to_internal_asset_deps(self) -> dict[str, set[AssetKey]]:
         """Convert to a dictionary of internal asset dependencies."""

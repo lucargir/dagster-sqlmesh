@@ -7,7 +7,7 @@ from dagster_sqlmesh.controller.base import (
 )
 from dagster_sqlmesh.translator import SQLMeshDagsterTranslator
 from dagster_sqlmesh.types import (
-    ConvertibleToAssetDep,
+    CoercibleToAssetDep,
     ConvertibleToAssetOut,
     SQLMeshModelDep,
     SQLMeshMultiAssetOptions,
@@ -28,7 +28,7 @@ class DagsterSQLMeshController(SQLMeshController[ContextCls]):
         cache is provided, it will be tried first to load the asset outs."""
 
         internal_asset_deps_map: dict[str, set[str]] = {}
-        deps_map: dict[str, ConvertibleToAssetDep] = {}
+        deps_map: dict[str, CoercibleToAssetDep] = {}
         asset_outs: dict[str, ConvertibleToAssetOut] = {}
 
         with self.instance(environment, "to_asset_outs") as instance:
@@ -59,7 +59,7 @@ class DagsterSQLMeshController(SQLMeshController[ContextCls]):
                         internal_asset_deps.add(key)
 
                         # create an external dep
-                        deps_map[table] = translator.create_asset_dep(key=key)
+                        deps_map[table] = key
 
                 model_key = translator.get_asset_key_str(model.fqn)
                 asset_outs[model_key] = translator.create_asset_out(
