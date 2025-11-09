@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.0 (2025-11-09)
+
+* chore: update uv.lock (#55) ([c1ff2d0](https://github.com/opensource-observer/oso/commit/c1ff2d0)), closes [#55](https://github.com/opensource-observer/oso/issues/55)
+* feat: use GeneratedCallables for handling console methods (#52) ([d4217ab](https://github.com/opensource-observer/oso/commit/d4217ab)), closes [#52](https://github.com/opensource-observer/oso/issues/52)
+* fix: move get_asset_key_str to translator and define translator from config (#51) ([cd319bf](https://github.com/opensource-observer/oso/commit/cd319bf)), closes [#51](https://github.com/opensource-observer/oso/issues/51)
+
 ## 0.20.0 (2025-08-18)
 
 * fix!: Runs should trigger materialization result (#50) ([ea62863](https://github.com/opensource-observer/oso/commit/ea62863)), closes [#50](https://github.com/opensource-observer/oso/issues/50)
