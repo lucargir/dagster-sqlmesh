@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.0 (2025-11-11)
+
+* fix: change release condition to trigger on automatic bump (#61) ([22e0446](https://github.com/opensource-observer/oso/commit/22e0446)), closes [#61](https://github.com/opensource-observer/oso/issues/61)
+
 ## <small>0.21.2 (2025-11-11)</small>
 
 * chore: update release options (#60) ([c13b089](https://github.com/opensource-observer/oso/commit/c13b089)), closes [#60](https://github.com/opensource-observer/oso/issues/60)
