@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     Definitions,
     MaterializeResult,
+    ResourceParam,
     asset,
     define_asset_job,
 )
@@ -27,12 +28,17 @@ SQLMESH_PROJECT_PATH = os.path.abspath(os.path.join(CURR_DIR, "../sqlmesh_projec
 SQLMESH_CACHE_PATH = os.path.join(SQLMESH_PROJECT_PATH, ".cache")
 DUCKDB_PATH = os.path.join(CURR_DIR, "../../db.db")
 
-sqlmesh_config = SQLMeshContextConfig(
+class CustomSQLMeshContextConfig(SQLMeshContextConfig):
+    custom_key: str
+
+    def get_translator(self):
+        return RewrittenSQLMeshTranslator(self.custom_key)
+
+sqlmesh_config = CustomSQLMeshContextConfig(
     path=SQLMESH_PROJECT_PATH, 
     gateway="local",
-    translator_class_name="definitions.RewrittenSQLMeshTranslator"
+    custom_key="custom_sqlmesh_prefix"
 )
-
 
 class RewrittenSQLMeshTranslator(SQLMeshDagsterTranslator):
     """A contrived SQLMeshDagsterTranslator that flattens the catalog of the
@@ -41,15 +47,18 @@ class RewrittenSQLMeshTranslator(SQLMeshDagsterTranslator):
     We include this as a test of the translator functionality.
     """
 
+    def __init__(self, custom_key: str):
+        self.custom_key = custom_key
+
     def get_asset_key(self, context: Context, fqn: str) -> AssetKey:
         table = exp.to_table(fqn)  # Ensure fqn is a valid table expression
         if table.db == "sqlmesh_example":
             # For the sqlmesh_example project, we use a custom key
-            return AssetKey(["sqlmesh", table.name])
+            return AssetKey([self.custom_key, table.name])
         return AssetKey([table.db, table.name])
 
     def get_group_name(self, context, model):
-        return "sqlmesh"
+        return self.custom_key
 
 
 @asset(key=["sources", "reset_asset"])
@@ -83,7 +92,7 @@ def test_source() -> pl.DataFrame:
     )
 
 
-@asset(deps=[AssetKey(["sqlmesh", "full_model"])])
+@asset(deps=[AssetKey(["custom_sqlmesh_prefix", "full_model"])])
 def post_full_model() -> pl.DataFrame:
     """An asset that depends on the `full_model` asset from the sqlmesh project.
     This is used to test that the sqlmesh assets are correctly materialized and
@@ -107,9 +116,9 @@ def post_full_model() -> pl.DataFrame:
     enabled_subsetting=True,
 )
 def sqlmesh_project(
-    context: AssetExecutionContext, sqlmesh: SQLMeshResource
+    context: AssetExecutionContext, sqlmesh: SQLMeshResource, sqlmesh_config: ResourceParam[SQLMeshContextConfig]
 ) -> t.Iterator[MaterializeResult[t.Any]]:
-    yield from sqlmesh.run(context)
+    yield from sqlmesh.run(context, config=sqlmesh_config)
 
 
 all_assets_job = define_asset_job(name="all_assets_job")
@@ -117,11 +126,12 @@ all_assets_job = define_asset_job(name="all_assets_job")
 defs = Definitions(
     assets=[sqlmesh_project, test_source, reset_asset, post_full_model],
     resources={
-        "sqlmesh": SQLMeshResource(config=sqlmesh_config),
+        "sqlmesh": SQLMeshResource(),
         "io_manager": DuckDBPolarsIOManager(
             database=DUCKDB_PATH,
             schema="sources",
         ),
+        "sqlmesh_config": sqlmesh_config,
     },
     jobs=[all_assets_job],
 )
