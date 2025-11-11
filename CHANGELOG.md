@@ -1,5 +1,9 @@
 # Changelog
 
+## <small>0.21.2 (2025-11-11)</small>
+
+* chore: update release options (#60) ([c13b089](https://github.com/opensource-observer/oso/commit/c13b089)), closes [#60](https://github.com/opensource-observer/oso/issues/60)
+
 ## <small>0.21.1 (2025-11-11)</small>
 
 * chore: update release options (#58) ([3b26320](https://github.com/opensource-observer/oso/commit/3b26320)), closes [#58](https://github.com/opensource-observer/oso/issues/58)
