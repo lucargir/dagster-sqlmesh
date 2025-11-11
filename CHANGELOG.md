@@ -1,5 +1,10 @@
 # Changelog
 
+## <small>0.21.1 (2025-11-11)</small>
+
+* chore: update release options (#58) ([3b26320](https://github.com/opensource-observer/oso/commit/3b26320)), closes [#58](https://github.com/opensource-observer/oso/issues/58)
+* fix: fix integration for custom translators that take options (#57) ([823abba](https://github.com/opensource-observer/oso/commit/823abba)), closes [#57](https://github.com/opensource-observer/oso/issues/57)
+
 ## 0.21.0 (2025-11-09)
 
 * chore: update uv.lock (#55) ([c1ff2d0](https://github.com/opensource-observer/oso/commit/c1ff2d0)), closes [#55](https://github.com/opensource-observer/oso/issues/55)
